@@ -7,7 +7,7 @@ import re
 
 print("BOT VERSION 25-JUNE-FINAL-12345")
 
-TOKEN = "8846752534:AAF0vwOmgvfYf7QQpTfcLbv28o005wyF-dc"
+TOKEN = os.environ.get("TOKEN")
 
 DATA_FILE = "tasks.json"
 
