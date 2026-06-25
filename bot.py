@@ -5,7 +5,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 import json
 import os
 
-print("BOT VERSION 25-JUNE-TEST")
+print("BOT VERSION 25-JUNE-TEST-999")
 
 TOKEN = "8846752534:AAF0vwOmgvfYf7QQpTfcLbv28o005wyF-dc"
 
@@ -394,11 +394,29 @@ async def myid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"Your ID: {update.effective_user.id}"
     )
-scheduler = AsyncIOScheduler()
+async def testreminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("TESTREMINDER COMMAND RECEIVED")
+
+    try:
+        await send_reminder(
+            context.application,
+            update.effective_user.id,
+            "TEST REMINDER"
+        )
+
+        await update.message.reply_text("Test completed")
+
+    except Exception as e:
+        print(f"TESTREMINDER ERROR: {e}")
+
+        await update.message.reply_text(
+            f"Error: {e}"
+        )
 
 app = Application.builder().token(TOKEN).post_init(post_init).build()
 
 app.add_handler(CommandHandler("myid", myid))
+app.add_handler(CommandHandler("testreminder", testreminder))
 app.add_handler(CommandHandler("settime", settime))
 app.add_handler(
     CommandHandler("removetime", removetime)
