@@ -7,8 +7,7 @@ import re
 
 print("BOT VERSION 25-JUNE-FINAL-12345")
 
-TOKEN = os.environ.get("TOKEN")
-print(f"TOKEN VALUE: '{TOKEN}'")
+TOKEN = "my token"
 
 DATA_FILE = "tasks.json"
 
@@ -17,7 +16,7 @@ DATA_FILE = "tasks.json"
 # Examples: "Asia/Tashkent", "Europe/London", "America/New_York"
 TIMEZONE = "Asia/Tashkent"
 
-# ─── Default daily habits (with reminder times) ───────────────────────────────
+# ─── Default daily tasks (with reminder times) ───────────────────────────────
 DEFAULT_HABITS = [
     {"task": "Morning adhkar",              "done": False, "time": "06:00"},
     {"task": "Morning Qur'an",              "done": False, "time": "06:10"},
@@ -128,7 +127,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/done <n> — mark task done\n"
         "/delete <n> — delete a task\n"
         "/clear — delete all tasks\n"
-        "/resetday — reload default daily habits\n"
+        "/resetday — reload default daily tasks\n"
         "/settime <n> <HH:MM> — set reminder time\n"
         "/removetime <n> — remove reminder\n"
         "/progress — today's progress\n"
@@ -151,7 +150,7 @@ async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_tasks(tasks)
     await update.message.reply_text(f"Added: {task}")
 
-async def show_habits(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def show_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     if user_id not in tasks or not tasks[user_id]:
         await update.message.reply_text("No tasks found. Use /resetday to load defaults.")
@@ -210,7 +209,7 @@ async def resetday(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tasks[user_id] = copy.deepcopy(DEFAULT_HABITS)
     save_tasks(tasks)
     schedule_daily_tasks(context.application)
-    await update.message.reply_text("Daily habits reset with reminders 🔔")
+    await update.message.reply_text("Daily tasks reset with reminders 🔔")
 
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
@@ -228,7 +227,7 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         tasks[user_id][index]["done"] = True
         save_tasks(tasks)
-        await update.message.reply_text("Habit marked complete ✅")
+        await update.message.reply_text("Task marked complete ✅")
     except ValueError:
         await update.message.reply_text("Enter a number.")
 
@@ -369,7 +368,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     if text == "📋 List Tasks":
-        await show_habits(update, context)
+        await show_tasks(update, context)
     elif text == "🗑 Clear Tasks":
         await clear(update, context)
     elif text == "➕ Add Task":
@@ -384,7 +383,7 @@ app = Application.builder().token(TOKEN).post_init(post_init).build()
 
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("add", add))
-app.add_handler(CommandHandler("list", show_habits))
+app.add_handler(CommandHandler("list", show_tasks))
 app.add_handler(CommandHandler("delete", delete))
 app.add_handler(CommandHandler("clear", clear))
 app.add_handler(CommandHandler("done", done))
@@ -401,4 +400,3 @@ app.add_error_handler(error_handler)
 
 print("Bot is running...")
 app.run_polling()
-
