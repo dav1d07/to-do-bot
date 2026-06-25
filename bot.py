@@ -159,6 +159,8 @@ def schedule_daily_tasks(app):
             if not time:
                 continue
 
+            print(f"Scheduling {t['task']} at {time}")
+
             hour, minute = map(int, time.split(":"))
 
             scheduler.add_job(
