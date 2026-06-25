@@ -160,7 +160,7 @@ async def show_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
     for i, t in enumerate(tasks[user_id]):
         mark = "✅" if t["done"] else "☑"
-        time_label = f"\n      🕐 {t['time']}" if t.get("time") else ""
+        time_label = f"  🕐{t['time']}" if t.get("time") else ""
         keyboard.append([
             InlineKeyboardButton(
                 f"{mark} {t['task']}{time_label}",
@@ -355,7 +355,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = []
     for i, t in enumerate(tasks[user_id]):
         mark = "✅" if t["done"] else "☑"
-        time_label = f"\n      🕐 {t['time']}" if t.get("time") else ""
+        time_label = f"  🕐{t['time']}" if t.get("time") else ""
         keyboard.append([
             InlineKeyboardButton(
                 f"{mark} {t['task']}{time_label}",
