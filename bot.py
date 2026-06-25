@@ -5,6 +5,8 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 import json
 import os
 
+print("BOT VERSION 25-JUNE-TEST")
+
 TOKEN = "8846752534:AAF0vwOmgvfYf7QQpTfcLbv28o005wyF-dc"
 
 DATA_FILE = "tasks.json"
