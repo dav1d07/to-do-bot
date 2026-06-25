@@ -1,0 +1,44 @@
+{
+  "5973475218": [
+    {
+      "task": "Morning adhkar",
+      "done": false,
+      "time": "06:00"
+    },
+    {
+      "task": "Morning Qur'an",
+      "done": false,
+      "time": "06:10"
+    },
+    {
+      "task": "Evening adhkar",
+      "done": false,
+      "time": "18:00"
+    },
+    {
+      "task": "Evening Qur'an",
+      "done": false,
+      "time": "18:10"
+    },
+    {
+      "task": "Learn Russian",
+      "done": false,
+      "time": "21:00"
+    },
+    {
+      "task": "Learn Arabic",
+      "done": false,
+      "time": "21:30"
+    },
+    {
+      "task": "Learn something new for work",
+      "done": false,
+      "time": "20:00"
+    },
+    {
+      "task": "Give charity",
+      "done": false,
+      "time": "12:00"
+    }
+  ]
+}
