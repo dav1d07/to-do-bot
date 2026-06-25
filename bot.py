@@ -399,13 +399,14 @@ async def myid(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def testreminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("TESTREMINDER COMMAND RECEIVED")
 
-    await update.message.reply_text("I received the command")
+    try:
+        await update.message.reply_text("I received the command")
 
-    await send_reminder(
-        context.application,
-        update.effective_user.id,
-        "TEST REMINDER"
-    )
+        await send_reminder(
+            context.application,
+            update.effective_user.id,
+            "TEST REMINDER"
+        )
 
         await update.message.reply_text("Test completed")
 
