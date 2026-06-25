@@ -398,6 +398,7 @@ app.add_handler(
 )
 
 print("Bot is running...")
+print("STARTING POLLING")
 scheduler.add_job(reset_all_users, "cron", hour=0, minute=0)
 app.run_polling()
 
