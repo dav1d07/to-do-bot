@@ -5,7 +5,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 import json
 import os
 
-TOKEN = "8846752534:AAFC1cwuib1CmuKb5vJYAVBJgnH-Io_Ew1g"
+TOKEN = "8846752534:AAF0vwOmgvfYf7QQpTfcLbv28o005wyF-dc"
 
 DATA_FILE = "tasks.json"
 
