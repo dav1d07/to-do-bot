@@ -370,12 +370,20 @@ async def progress(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Progress: {percent}%"
     )
 async def send_reminder(app, user_id, text):
-    print(f"REMINDER FIRED: {text} -> {user_id}")
+    print("REMINDER FUNCTION STARTED")
 
-    await app.bot.send_message(
-        chat_id=int(user_id),
-        text=f"🔔 Reminder:\n{text}"
-    )
+    try:
+        print(f"Sending reminder to {user_id}")
+
+        await app.bot.send_message(
+            chat_id=int(user_id),
+            text=f"🔔 Reminder:\n{text}"
+        )
+
+        print("REMINDER SENT")
+
+    except Exception as e:
+        print(f"REMINDER ERROR: {e}")
 async def myid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"Your ID: {update.effective_user.id}"
