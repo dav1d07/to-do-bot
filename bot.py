@@ -289,7 +289,13 @@ def reset_all_users():
     save_tasks(tasks)
     print("Daily reset completed")
 async def post_init(app: Application):
+    print("POST_INIT RUNNING")
+    print("STARTING SCHEDULER")
+
     scheduler.start()
+
+    print("SCHEDULER STARTED")
+
     schedule_daily_tasks(app)
 async def settime(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
