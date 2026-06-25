@@ -5,7 +5,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 import json
 import os
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, CallbackQueryHandler, filters
-print("BOT VERSION 25-JUNE-TEST-999")
+print("BOT VERSION 25-JUNE-FINAL-12345")
 
 TOKEN = "8846752534:AAF0vwOmgvfYf7QQpTfcLbv28o005wyF-dc"
 
