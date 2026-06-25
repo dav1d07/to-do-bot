@@ -1,2 +1,5 @@
 python-telegram-bot[job-queue]
-apscheduler
+APScheduler
+python-telegram-bot[job-queue]
+APScheduler
+tzlocal
