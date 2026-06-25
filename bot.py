@@ -370,6 +370,8 @@ async def progress(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Progress: {percent}%"
     )
 async def send_reminder(app, user_id, text):
+    print(f"REMINDER FIRED: {text} -> {user_id}")
+
     await app.bot.send_message(
         chat_id=int(user_id),
         text=f"🔔 Reminder:\n{text}"
