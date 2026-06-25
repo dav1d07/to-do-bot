@@ -7,7 +7,7 @@ import re
 
 print("BOT VERSION 25-JUNE-FINAL-12345")
 
-TOKEN = "my token"
+TOKEN = os.environ.get("TOKEN")
 
 DATA_FILE = "tasks.json"
 
