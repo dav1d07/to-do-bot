@@ -4,7 +4,7 @@ from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKe
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, CallbackQueryHandler, filters
 import json
 import os
-
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, CallbackQueryHandler, filters
 print("BOT VERSION 25-JUNE-TEST-999")
 
 TOKEN = "8846752534:AAF0vwOmgvfYf7QQpTfcLbv28o005wyF-dc"
@@ -74,6 +74,8 @@ async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(f"Added: {task}")
 
+async def error_handler(update, context):
+    print(f"ERROR OCCURRED: {context.error}")
 async def list_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
 
@@ -397,12 +399,13 @@ async def myid(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def testreminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("TESTREMINDER COMMAND RECEIVED")
 
-    try:
-        await send_reminder(
-            context.application,
-            update.effective_user.id,
-            "TEST REMINDER"
-        )
+    await update.message.reply_text("I received the command")
+
+    await send_reminder(
+        context.application,
+        update.effective_user.id,
+        "TEST REMINDER"
+    )
 
         await update.message.reply_text("Test completed")
 
@@ -434,6 +437,7 @@ app.add_handler(CommandHandler("clear", clear))
 app.add_handler(
     MessageHandler(filters.TEXT & ~filters.COMMAND, button_handler)
 )
+app.add_error_handler(error_handler)
 
 print("Bot is running...")
 print("STARTING POLLING")
