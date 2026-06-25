@@ -132,6 +132,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/removetime <n> — remove reminder\n"
         "/progress — today's progress\n"
         "/remind <minutes> <text> — one-off reminder\n"
+        "/rename <n> <new name> — rename a task\n"
         "/myid — show your Telegram ID",
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True),
     )
@@ -364,6 +365,29 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(keyboard))
 
+# ─── Rename task ─────────────────────────────────────────────────────────────
+async def rename(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    if len(context.args) < 2:
+        await update.message.reply_text("Usage: /rename 2 New task name")
+        return
+
+    try:
+        index = int(context.args[0]) - 1
+        if index < 0 or index >= len(tasks.get(user_id, [])):
+            await update.message.reply_text("Invalid task number.")
+            return
+
+        new_name = " ".join(context.args[1:])
+        old_name = tasks[user_id][index]["task"]
+        tasks[user_id][index]["task"] = new_name
+        save_tasks(tasks)
+        schedule_daily_tasks(context.application)
+        await update.message.reply_text(f"Renamed:\n'{old_name}' → '{new_name}'")
+
+    except (ValueError, KeyError):
+        await update.message.reply_text("Usage: /rename 2 New task name")
+
 # ─── Text button handler ──────────────────────────────────────────────────────
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
@@ -392,6 +416,7 @@ app.add_handler(CommandHandler("settime", settime))
 app.add_handler(CommandHandler("removetime", removetime))
 app.add_handler(CommandHandler("progress", progress))
 app.add_handler(CommandHandler("remind", remind))
+app.add_handler(CommandHandler("rename", rename))
 app.add_handler(CommandHandler("myid", myid))
 app.add_handler(CommandHandler("testreminder", testreminder))
 app.add_handler(CallbackQueryHandler(button_click))
