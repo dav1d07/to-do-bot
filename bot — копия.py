@@ -1,9 +1,13 @@
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from datetime import datetime
+from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, CallbackQueryHandler, filters
 import json
 import os
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, CallbackQueryHandler, filters
+print("BOT VERSION 25-JUNE-FINAL-12345")
 
-TOKEN = "8846752534:AAFC1cwuib1CmuKb5vJYAVBJgnH-Io_Ew1g"
+TOKEN = "8846752534:AAF0vwOmgvfYf7QQpTfcLbv28o005wyF-dc"
 
 DATA_FILE = "tasks.json"
 
@@ -18,6 +22,21 @@ def save_tasks(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 tasks = load_tasks()
+def schedule_user_tasks(app):
+    for user_id, user_tasks in tasks.items():
+        for t in user_tasks:
+            if "time" not in t:
+                continue
+
+            hour, minute = map(int, t["time"].split(":"))
+
+            scheduler.add_job(
+                send_reminder,
+                "cron",
+                hour=hour,
+                minute=minute,
+                args=[app, user_id, t["task"]]
+            )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -46,11 +65,17 @@ async def add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id not in tasks:
         tasks[user_id] = []
 
-    tasks[user_id].append(task)
+    tasks[user_id].append({
+        "task": task,
+        "done": False
+    })
+
     save_tasks(tasks)
 
     await update.message.reply_text(f"Added: {task}")
 
+async def error_handler(update, context):
+    print(f"ERROR OCCURRED: {context.error}")
 async def list_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
 
@@ -102,7 +127,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     if text == "📋 List Tasks":
-        await list_tasks(update, context)
+        await show_habits(update, context)
 
     elif text == "🗑 Clear Tasks":
         await clear(update, context)
@@ -115,19 +140,40 @@ async def resetday(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
 
     tasks[user_id] = [
-        {"task": "Morning adhkar", "done": False},
-        {"task": "Evening adhkar", "done": False},
-        {"task": "Morning Qur'an", "done": False},
-        {"task": "Evening Qur'an", "done": False},
-        {"task": "Learn Russian", "done": False},
-        {"task": "Learn Arabic", "done": False},
-        {"task": "Learn something new for work", "done": False},
-        {"task": "Give charity", "done": False}
+        {"task": "Morning adhkar", "done": False, "time": "06:00"},
+        {"task": "Morning Qur'an", "done": False, "time": "06:10"},
+        {"task": "Evening adhkar", "done": False, "time": "18:00"},
+        {"task": "Evening Qur'an", "done": False, "time": "18:10"},
+        {"task": "Learn Russian", "done": False, "time": "21:00"},
+        {"task": "Learn Arabic", "done": False, "time": "21:30"},
+        {"task": "Learn something new for work", "done": False, "time": "20:00"},
+        {"task": "Give charity", "done": False, "time": "12:00"}
     ]
 
     save_tasks(tasks)
 
-    await update.message.reply_text("Daily habits loaded.")
+    await update.message.reply_text("Daily habits + reminders reset 🔔")
+def schedule_daily_tasks(app):
+    scheduler.remove_all_jobs()
+
+    for user_id, user_tasks in tasks.items():
+        for t in user_tasks:
+            time = t.get("time")
+
+            if not time:
+                continue
+
+            print(f"Scheduling {t['task']} at {time}")
+
+            hour, minute = map(int, time.split(":"))
+
+            scheduler.add_job(
+                send_reminder,
+                "cron",
+                hour=hour,
+                minute=minute,
+                args=[app, user_id, t["task"]]
+            )
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
 
@@ -154,19 +200,248 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError:
         await update.message.reply_text("Enter a number.")
 
-app = Application.builder().token(TOKEN).build()
+async def show_habits(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
 
+    if user_id not in tasks:
+        await update.message.reply_text("No habits found. Use /resetday")
+        return
+
+    keyboard = []
+
+    for i, t in enumerate(tasks[user_id]):
+        mark = "✅" if t["done"] else "☑"
+        keyboard.append([
+            InlineKeyboardButton(
+                f"{mark} {t['task']}",
+                callback_data=str(i)
+            )
+        ])
+
+    await update.message.reply_text(
+        "Your tasks:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+async def reminder_job(context: ContextTypes.DEFAULT_TYPE):
+    job = context.job
+    await context.bot.send_message(
+        job.chat_id,
+        text=f"Reminder: {job.data}"
+    )
+async def remind(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if len(context.args) < 2:
+        await update.message.reply_text("Usage: /remind 10 Morning adhkar")
+        return
+
+    minutes = int(context.args[0])
+    text = " ".join(context.args[1:])
+
+    job = context.job_queue.run_once(
+        reminder_job,
+        minutes * 60,
+        chat_id=update.effective_chat.id,
+        data=text
+    )
+
+    await update.message.reply_text(f"Reminder set in {minutes} minutes")
+async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    user_id = str(query.from_user.id)
+    index = int(query.data)
+
+    if user_id not in tasks:
+        return
+
+    tasks[user_id][index]["done"] = not tasks[user_id][index]["done"]
+    save_tasks(tasks)
+
+    # rebuild buttons
+    keyboard = []
+
+    for i, t in enumerate(tasks[user_id]):
+        mark = "✅" if t["done"] else "☑"
+        keyboard.append([
+            InlineKeyboardButton(
+                f"{mark} {t['task']}",
+                callback_data=str(i)
+            )
+        ])
+
+    await query.edit_message_reply_markup(
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+scheduler = AsyncIOScheduler()
+def reset_all_users():
+    global tasks
+
+    for user_id in tasks:
+        tasks[user_id] = [
+            {"task": "Morning adhkar", "done": False},
+            {"task": "Evening adhkar", "done": False},
+            {"task": "Morning Qur'an", "done": False},
+            {"task": "Evening Qur'an", "done": False},
+            {"task": "Learn Russian", "done": False},
+            {"task": "Learn Arabic", "done": False},
+            {"task": "Learn something new for work", "done": False},
+            {"task": "Give charity", "done": False}
+        ]
+
+    save_tasks(tasks)
+    print("Daily reset completed")
+async def post_init(app: Application):
+    print("POST_INIT RUNNING")
+    print("STARTING SCHEDULER")
+
+    scheduler.start()
+
+    print("SCHEDULER STARTED")
+
+    schedule_daily_tasks(app)
+async def settime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+
+    if len(context.args) != 2:
+        await update.message.reply_text(
+            "Usage: /settime 2 07:30"
+        )
+        return
+
+    try:
+        index = int(context.args[0]) - 1
+        new_time = context.args[1]
+
+        tasks[user_id][index]["time"] = new_time
+
+        save_tasks(tasks)
+
+        scheduler.remove_all_jobs()
+        scheduler.add_job(reset_all_users, "cron", hour=0, minute=0)
+        schedule_daily_tasks(context.application)
+        await update.message.reply_text(
+            f"Time changed to {new_time}"
+        )
+
+    except:
+        await update.message.reply_text(
+            "Example: /settime 2 07:30"
+        )
+async def removetime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+
+    if len(context.args) != 1:
+        await update.message.reply_text(
+            "Usage: /removetime 1"
+        )
+        return
+
+    try:
+        index = int(context.args[0]) - 1
+
+        tasks[user_id][index].pop("time", None)
+
+        save_tasks(tasks)
+
+        scheduler.remove_all_jobs()
+        scheduler.add_job(
+            reset_all_users,
+            "cron",
+            hour=0,
+            minute=0
+        )
+        schedule_daily_tasks(context.application)
+
+        await update.message.reply_text(
+            "Reminder removed 🔕"
+        )
+
+    except:
+        await update.message.reply_text(
+            "Invalid task number."
+        )
+async def progress(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+
+    if user_id not in tasks or not tasks[user_id]:
+        await update.message.reply_text("No tasks found.")
+        return
+
+    total = len(tasks[user_id])
+    completed = sum(1 for t in tasks[user_id] if t["done"])
+    percent = round(completed / total * 100)
+
+    await update.message.reply_text(
+        f"📊 Daily Progress\n\n"
+        f"✅ Completed: {completed}\n"
+        f"⬜ Remaining: {total - completed}\n\n"
+        f"Progress: {percent}%"
+    )
+async def send_reminder(app, user_id, text):
+    print("REMINDER FUNCTION STARTED")
+
+    try:
+        print(f"Sending reminder to {user_id}")
+
+        await app.bot.send_message(
+            chat_id=int(user_id),
+            text=f"🔔 Reminder:\n{text}"
+        )
+
+        print("REMINDER SENT")
+
+    except Exception as e:
+        print(f"REMINDER ERROR: {e}")
+async def myid(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        f"Your ID: {update.effective_user.id}"
+    )
+async def testreminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("TESTREMINDER COMMAND RECEIVED")
+
+    try:
+        await update.message.reply_text("I received the command")
+
+        await send_reminder(
+            context.application,
+            update.effective_user.id,
+            "TEST REMINDER"
+        )
+
+        await update.message.reply_text("Test completed")
+
+    except Exception as e:
+        print(f"TESTREMINDER ERROR: {e}")
+
+        await update.message.reply_text(
+            f"Error: {e}"
+        )
+
+app = Application.builder().token(TOKEN).post_init(post_init).build()
+
+app.add_handler(CommandHandler("myid", myid))
+app.add_handler(CommandHandler("testreminder", testreminder))
+app.add_handler(CommandHandler("settime", settime))
+app.add_handler(
+    CommandHandler("removetime", removetime)
+)
+app.add_handler(CommandHandler("progress", progress))
+app.add_handler(CommandHandler("remind", remind))
+app.add_handler(CallbackQueryHandler(button_click))
 app.add_handler(CommandHandler("done", done))
 app.add_handler(CommandHandler("resetday", resetday))
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("add", add))
-app.add_handler(CommandHandler("list", list_tasks))
+app.add_handler(CommandHandler("list", show_habits))
 app.add_handler(CommandHandler("delete", delete))
 app.add_handler(CommandHandler("clear", clear))
 app.add_handler(
     MessageHandler(filters.TEXT & ~filters.COMMAND, button_handler)
 )
+app.add_error_handler(error_handler)
 
 print("Bot is running...")
+print("STARTING POLLING")
+scheduler.add_job(reset_all_users, "cron", hour=0, minute=0)
 app.run_polling()
 
